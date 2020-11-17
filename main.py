@@ -6,30 +6,14 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from time import sleep
+from config import begin_info
 
 path = r"C:\Users\user\PycharmProjects\geckogeckodriver\geckodriver.exe"
 userAgent = 'Mozilla/5.0 (Windows NT 6.3; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/85.0.4183.102 Safari/537.36'
 
-name_first = {'Афлубин': 'Aflubin'}
-urls_first = {'apteka.ru': 'https://apteka.ru/product/aflubin-5e32669c65b5ab00016503bd/',
-        'zdorov.ru': 'https://zdorov.ru/Catalog/344/401/1418/aflubin-1428',
-        'dialog.ru': 'https://dialog.ru/product/aflubin_kapli_50ml/',
-        'planetazdorovo.ru':
-            'https://apteka.planetazdorovo.ru/catalog/lekarstva-i-bad/prostuda-i-gripp/protivovirusnye-immunokorrektory/aflubin-kapli-oral-50ml-flkap-2307600/',
-        'ZdravCity.ru': 'https://zdravcity.ru/p_aflubin-kapli-gomeopat-50ml-0006483.html',
-        'gorzdrav.org': 'https://gorzdrav.org/p/aflubin-kapli-gomeop-50ml-2098/'}
-
-
-name_second = {'Аквамарис': 'Aquamaris'}
-urls_second = {'apteka.ru': 'https://apteka.ru/product/akva-maris-plyus-5e4255a0b4db8000014d4ed8/',
-        'zdorov.ru': 'https://zdorov.ru/Catalog/344/426/428/akva-maris-42833',
-        'dialog.ru': 'https://dialog.ru/product/akva_maris_plyus_sprey_30ml/',
-        'planetazdorovo.ru':
-            'https://apteka.planetazdorovo.ru/catalog/lekarstva-i-bad/prostuda-i-gripp/nasmork/akva-maris-plyus-sprej-nazal-30-25034703/',
-        'ZdravCity.ru': 'https://zdravcity.ru/p_akva-maris-pljus-sprej-30ml-0006315.html',
-        'gorzdrav.org': 'https://gorzdrav.org/p/akva-maris-pljus-sprej-30ml-39489/'}
-
-dict_med = {name_first['Афлубин']: urls_first, name_second['Аквамарис']: urls_second}
+# Получение входных данных из файла config.ini
+# TODO выполнить проверки в .ini: первая строка, последовательность, наличие "=", добавить комментарии с примерами как надо
+dict_med = begin_info()
 
 medList = []  # Список лекарств
 listPriceDialog = []  # Список цен в аптеках Диалог
