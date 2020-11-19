@@ -7,6 +7,8 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from time import sleep
 from config import begin_info
+from Gsheets import Gsheet
+from datetime import datetime
 
 path = r"C:\Users\user\PycharmProjects\geckogeckodriver\geckodriver.exe"
 userAgent = 'Mozilla/5.0 (Windows NT 6.3; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/85.0.4183.102 Safari/537.36'
@@ -14,6 +16,7 @@ userAgent = 'Mozilla/5.0 (Windows NT 6.3; Win64; x64) AppleWebKit/537.36 (KHTML,
 # Получение входных данных из файла config.ini
 # TODO выполнить проверки в .ini: первая строка, последовательность, наличие "=", добавить комментарии с примерами как надо
 dict_med = begin_info()
+dict_price = {} # Словарь для отправки в Гугл.Таблицы.
 
 medList = []  # Список лекарств
 listPriceDialog = []  # Список цен в аптеках Диалог
@@ -35,7 +38,7 @@ def info_zdorov_ru(url):
     browser.get(url)
     sleep(1)
     WebDriverWait(browser, 1000000).until(
-        EC.element_to_be_clickable((By.LINK_TEXT, 'Аптека самовывоза'))).click()
+        EC.element_to_be_clickable((By.LINK_TEXT, 'Аптека самовывоза'))).click() #TODO Исправить ошибку при первом запуске
     # browser.find_element_by_link_text('Аптека самовывоза').click()
     browser.find_element_by_xpath('//*[@id="close-cookie"]').click()
 
@@ -209,7 +212,7 @@ def info_gorzdrav(html):
 
 
 def main():
-
+    price = 0.0
     for names, urls in dict_med.items():
         print(f'Получение данных по {names}.')
         for pharmacy, url in urls.items():
@@ -235,12 +238,34 @@ def main():
                 html = get_html(url)
                 title, priceOld, price = info_gorzdrav(html)
                 appendMedList(pharmacy, title, price, priceOld, url)
+            dict_price[pharmacy] = price
+
         sleep(1)
         writeCSV(names)
+        writeGoogleSheets(names, dict_price)
         # Очистка списков после записи цен на лекарства. Для использования с новым.
         medList.clear()
         listPriceDialog.clear()
         listPricePlaneta.clear()
+        dict_price.clear()
+
+
+# Запись в Гугл.Таблицы
+def writeGoogleSheets(med, data):
+    sheet = Gsheet(med)
+    ws = sheet.worksheet
+    try:
+        ws.append_row([datetime.now().strftime("%d.%m.%Y %H:%M:%S"),
+                       data['apteka.ru'],
+                       data['zdorov.ru'],
+                       data['dialog.ru'],
+                       data['planetazdorovo.ru'],
+                       data['ZdravCity.ru'],
+                       data['gorzdrav.org']])
+        print(f'Запись в Гугл.Таблицу по {med} завершена успешна')
+    except Exception as e:
+        print(f'Запись в Гугл.Таблицу по {med} не удалась')
+        print(e)
 
 
 # Запись в csv
