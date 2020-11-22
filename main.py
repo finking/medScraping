@@ -5,7 +5,7 @@ from selenium import webdriver
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
-from time import sleep
+from time import sleep, perf_counter
 from config import begin_info
 from Gsheets import Gsheet
 from datetime import datetime
@@ -214,9 +214,11 @@ def info_gorzdrav(html):
 def main():
     price = 0.0
     for names, urls in dict_med.items():
+        time_start_drug = perf_counter() # Начало отчета времени для конкретного лекарства
         print(f'Получение данных по {names}.')
         for pharmacy, url in urls.items():
             print(f"Получение данных с {pharmacy}.")
+            time_start_pharmacy = perf_counter()  # Начало отчета времени для конкретной аптеки
             if pharmacy == 'apteka.ru':
                 html = get_html(url)
                 title, priceOld, price= info_apteka_ru(html)
@@ -239,16 +241,26 @@ def main():
                 title, priceOld, price = info_gorzdrav(html)
                 appendMedList(pharmacy, title, price, priceOld, url)
             dict_price[pharmacy] = price
+            print(f'Получение информации с сайта {pharmacy} заняло {round(perf_counter()-time_start_pharmacy, 4)} секунд')
 
         sleep(1)
+
+        # Запись в csv-file
+        time_start_csv = perf_counter()
         writeCSV(names)
+        print(f'Время записи в csv-файл составляет: {round(perf_counter() - time_start_csv, 4)} секунд')
+
+        # Запись в googlesheets
+        time_start_googlesheets = perf_counter()
         writeGoogleSheets(names, dict_price)
+        print(f'Время записи в google-таблицы составляет: {round(perf_counter() - time_start_googlesheets, 4)} секунд')
+
         # Очистка списков после записи цен на лекарства. Для использования с новым.
         medList.clear()
         listPriceDialog.clear()
         listPricePlaneta.clear()
         dict_price.clear()
-
+        print(f'Время обработки данных для {names} составляет: {round(perf_counter()-time_start_drug, 4)} секунд')
 
 # Запись в Гугл.Таблицы
 def writeGoogleSheets(med, data):
@@ -293,4 +305,6 @@ def appendMedList(pharmacy, title, price, priceOld, url):
 
 
 if __name__ == '__main__':
+    time_start_total = perf_counter()  # Начало отчета работы скрипта
     main()
+    print(f'Общее время работы скрипта: {round(perf_counter() - time_start_total, 4)} секунд')
