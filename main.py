@@ -36,21 +36,18 @@ def get_html(url):
 def info_zdorov_ru(url):
     browser = webdriver.Firefox(executable_path=path)
     browser.get(url)
-    sleep(1)
-    WebDriverWait(browser, 1000000).until(
-        EC.element_to_be_clickable((By.LINK_TEXT, 'Аптека самовывоза'))).click() #TODO Исправить ошибку при первом запуске
-    # browser.find_element_by_link_text('Аптека самовывоза').click()
-    browser.find_element_by_xpath('//*[@id="close-cookie"]').click()
 
-    browser.find_element_by_xpath('//*[@id="173-header"]/a').click()
-    browser.find_element_by_xpath('//*[@id="yt1"]').click()
-    title = browser.find_element_by_id('topheader').text
+    browser.find_element_by_xpath('//*[@id="__next"]/div[2]/div/div/div[2]/div[1]/div/div[2]/div[2]/div/span').click()
+    browser.find_element_by_xpath(
+        '/html/body/div/div[2]/div/div/div[2]/div[1]/div/div[2]/div[3]/div/div/div/div[1]/div[2]/div[35]/div/div[2]/button').click()
+
+    title = browser.find_element_by_xpath('//*[@id="__next"]/div[2]/div/div/div[3]/div/div[2]/div/div[1]/span').text
+    priceOld = ''
+
     try:
-        priceOld = float(browser.find_element_by_class_name('pricenormal').text)
-    except:
-        priceOld = ''
-    try:
-        price = float(browser.find_element_by_class_name('pricediscount').text.split('*')[0]) # 228.00*
+        price = float(browser.find_element_by_xpath(
+            '//*[@id="__next"]/div[2]/div/div/div[3]/div/div[3]/div/div[3]/div/div[2]/div/div[1]/div[1]/div/div/span').text.split(
+            ' ')[0])
     except:
         price = ''
     browser.close()
@@ -61,14 +58,14 @@ def info_zdorov_ru(url):
 # Получение данных из apteka.ru
 def info_apteka_ru(html):
     bs = BeautifulSoup(html, 'lxml')
-    ProductPage = bs.find('div', class_='ProductPage__aside-inner')
-    title = ProductPage.find('p').text
+    title = bs.find('h1').text
+    ProductPage = bs.find('div', class_='ProductOffer')
     try:
-        priceOld = float(ProductPage.find('div', class_='ProductPage__old-price').text)
+        priceOld = float(ProductPage.find('div', class_='ProductOffer__ndisc').text.split('₽')[0])
     except:
         priceOld = ''
     try:
-        price = float(ProductPage.find('div', class_='ProductPage__price').text)
+        price = float(ProductPage.find('div', class_='ProductOffer__price').text.split('₽')[0])
     except:
         price = ''
 
@@ -99,9 +96,11 @@ def info_dialog_ru(url):
 
         except:
             print(f"В аптеке по адресу {key} нет запрашиваемого лекарства")
-            priceInPharm = 0.0
+            priceInPharm = 99999.0  # Чтобы следующая действительная цена была меньше этой.
         listPriceDialog.append(priceInPharm)
     price = min(listPriceDialog)
+    if price == 99999.0:  # В случае, если ни в одной из выбранных аптек нет лекарства
+        price = 0.0
     browser.close()
 
     return title, priceOld, price
@@ -135,6 +134,12 @@ def info_planeta_ru(url):
     # Обновляем браузер, чтобы избавиться от всплывающего окна (iframe)
     browser.refresh()
     # sleep(1)
+    try:
+        browser.find_element_by_xpath('//*[@id="block-fixed_price-close"]').click()
+    except:
+        sleep(1)
+        browser.refresh()
+        browser.find_element_by_xpath('//*[@id="block-fixed_price-close"]').click()
 
     # Подготовка списка аптек. Изначально доступно только 5 шт.
     try:
@@ -204,7 +209,8 @@ def info_gorzdrav(html):
     except:
         priceOld = ''
     try:
-        price = float(soup.find('span', class_='b-price--large').text.strip().split(' ')[-2])
+        # price = float(soup.find('span', class_='b-price--large').text.strip().split(' ')[-2])
+        price = float(soup.find('span', class_='b-price--large').text.strip().split(' ')[0].split('\n')[-1])
     except Exception as e:
         price = ''
         print(e)
@@ -237,7 +243,11 @@ def main():
                 title, priceOld, price = info_zdrav_city(html)
                 appendMedList(pharmacy, title, price, priceOld, url)
             elif pharmacy == 'gorzdrav.org':
-                html = get_html(url)
+                try:
+                    html = get_html(url)
+                except:
+                    print('Не удалось получить информацию.')
+                    break
                 title, priceOld, price = info_gorzdrav(html)
                 appendMedList(pharmacy, title, price, priceOld, url)
             dict_price[pharmacy] = price
